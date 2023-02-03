@@ -404,7 +404,7 @@ class googleimagesdownload:
         main = data[3]
         info = data[9]
         if info is None:
-            info = data[11]
+            info = data[23]
         formatted_object = {}
         try:
             formatted_object['image_height'] = main[2]
@@ -881,6 +881,7 @@ class googleimagesdownload:
     def _get_all_items(self, image_objects, main_directory, dir_name, limit, arguments):
         items = []
         abs_path = []
+        urls=[]
         errorCount = 0
         i = 0
         count = 1
@@ -926,6 +927,7 @@ class googleimagesdownload:
                     object['image_filename'] = return_image_name
                     items.append(object)  # Append all the links in the list named 'Links'
                     abs_path.append(absolute_path)
+                    urls.append(object['image_link'])
                 else:
                     errorCount += 1
 
@@ -937,7 +939,7 @@ class googleimagesdownload:
             print("\n\nUnfortunately all " + str(
                 limit) + " could not be downloaded because some images were not downloadable. " + str(
                 count - 1) + " is all we got for this search filter!")
-        return items, errorCount, abs_path
+        return items, errorCount, abs_path, urls
 
     # Bulk Download
     def download(self, arguments):
@@ -957,32 +959,32 @@ class googleimagesdownload:
                     records.append(arguments)
                 total_errors = 0
                 for rec in records:
-                    paths, errors = self.download_executor(rec)
+                    paths, errors, urls = self.download_executor(rec)
                     for i in paths:
                         paths_agg[i] = paths[i]
                     if not arguments["silent_mode"]:
                         if arguments['print_paths']:
                             print(paths.encode('raw_unicode_escape').decode('utf-8'))
                     total_errors = total_errors + errors
-                return paths_agg, total_errors
+                return paths_agg, total_errors, urls
             # if the calling file contains params directly
             else:
-                paths, errors = self.download_executor(arguments)
+                paths, errors, urls = self.download_executor(arguments)
                 for i in paths:
                     paths_agg[i] = paths[i]
                 if not arguments["silent_mode"]:
                     if arguments['print_paths']:
                         print(paths.encode('raw_unicode_escape').decode('utf-8'))
-                return paths_agg, errors
+                return paths_agg, errors, urls
         # for input coming from CLI
         else:
-            paths, errors = self.download_executor(arguments)
+            paths, errors, urls = self.download_executor(arguments)
             for i in paths:
                 paths_agg[i] = paths[i]
             if not arguments["silent_mode"]:
                 if arguments['print_paths']:
                     print(paths.encode('raw_unicode_escape').decode('utf-8'))
-        return paths_agg, errors
+        return paths_agg, errors, urls
 
     def download_executor(self, arguments):
         paths = {}
@@ -1115,7 +1117,7 @@ class googleimagesdownload:
                             print("Getting URLs without downloading images...")
                         else:
                             print("Starting Download...")
-                    items, errorCount, abs_path = self._get_all_items(images, main_directory, dir_name, limit,
+                    items, errorCount, abs_path, url_out = self._get_all_items(images, main_directory, dir_name, limit,
                                                                       arguments)  # get all image items and download images
                     paths[pky + search_keyword[i] + sky] = abs_path
 
@@ -1148,7 +1150,7 @@ class googleimagesdownload:
                     total_errors = total_errors + errorCount
                     if not arguments["silent_mode"]:
                         print("\nErrors: " + str(errorCount) + "\n")
-        return paths, total_errors
+        return paths, total_errors, url_out
 
 
 # ------------- Main Program -------------#
